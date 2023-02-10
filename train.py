@@ -363,16 +363,6 @@ def main():
         # Accumulate gradients
         loss.backward()
 
-        # nan/inf check, need check after the gradient is computed but before it's applied
-        # TODO: possibly inefficient, check power consumption metrics
-        norm_sum = grad_norm_sum(unet)
-        if norm_sum.isnan().item() or norm_sum.isinf().item():
-            step = revert_model(
-                config, current_pipeline_path, unet, ema_unet, optimizer
-            )
-
-            continue
-
         if config.model.get("max_grad_norm", False):
             nn.utils.clip_grad_norm_(unet.parameters(), config.model.max_grad_norm)
 
