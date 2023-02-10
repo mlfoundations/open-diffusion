@@ -387,7 +387,6 @@ def main():
                 {
                     "step_loss": loss.detach().item(),
                     "lr": lr_scheduler.current_lr(),
-                    "norm_sum": norm_sum.item(),
                     "iter": step,
                     "images/sec": images_per_second_per_gpu * config.system.world_size,
                     "images/sec/gpu": images_per_second_per_gpu,
@@ -400,7 +399,6 @@ def main():
                 f"({100*num_examples_seen/config.experiment.num_examples_to_see:0.2f}%): "
                 f" Loss: {loss.item():0.4f}"
                 f" Step: {step}"
-                f" Norm Sum: {norm_sum.item():0.2f}"
                 f" im/s/GPU: {images_per_second_per_gpu:0.2f}"
             )
 
