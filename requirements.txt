@@ -1,0 +1,14 @@
+torch
+torchvision
+diffusers
+webdataset
+tqdm
+omegaconf
+transformers
+pyarrow
+wandb
+datasets
+fairscale
+accelerate
+xformers
+triton
