@@ -308,7 +308,7 @@ def main():
         if not save_only_most_recent:
             # Maintain current pipeline symlink
             current_pipeline_path.unlink(missing_ok=True)
-            current_pipeline_path.symlink_to(save_path)
+            current_pipeline_path.symlink_to(save_path.absolute().resolve())
 
     log_if_global_master("Beginning training")
 
@@ -507,7 +507,7 @@ def validate_and_save_model(
         if not save_only_most_recent:
             # Maintain current pipeline symlink
             current_pipeline_path.unlink(missing_ok=True)
-            current_pipeline_path.symlink_to(save_path)
+            current_pipeline_path.symlink_to(save_path.absolute().resolve())
         else:
             # Saving success, delete tmp pipeline
             maybe_delete_file_or_folder(current_pipeline_path.parent / "pipeline_tmp")
