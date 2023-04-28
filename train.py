@@ -126,6 +126,7 @@ def main():
             dir=config.experiment.log_dir,
             id=run_id,
             entity=config.wandb.get("entity", None),
+            mode=config.wandb.get("mode", "online"),
         )
 
         wandb.run.log_code(".")
@@ -235,7 +236,6 @@ def main():
     # GETTING NOISE SCHEDULER
     # TODO does it make sense to use ddpm scheduler for training?
     noise_scheduler = maybe_load_model(config, "scheduler", DDPMScheduler)
-
     # GETTING TRAIN DATASET
     train_dataset = getattr(data, config.dataset.type)(
         rank=config.system.global_rank,
@@ -295,6 +295,7 @@ def main():
 
         # Save model in the diffusers format
         save_model(
+            config=config,
             unet=unet.module,
             text_encoder=text_encoder,
             vae=vae,
@@ -425,6 +426,7 @@ def main():
 
         save_path = Path(config.experiment.folder) / "final"
         save_model(
+            config=config,
             unet=unet.module,
             text_encoder=text_encoder,
             vae=vae,
@@ -494,6 +496,7 @@ def validate_and_save_model(
 
         # Save model
         save_model(
+            config=config,
             unet=unet.module,
             text_encoder=text_encoder,
             vae=vae,
@@ -570,6 +573,7 @@ def revert_model(config, current_pipeline_path, unet, ema_unet, optimizer):
 
 
 def save_model(
+    config,
     unet,
     vae,
     tokenizer,
@@ -582,15 +586,13 @@ def save_model(
     if ema_unet is not None:
         ema_unet.store(unet.parameters())
         ema_unet.copy_to(unet.parameters())
-
+    scheduler = maybe_load_model(config, "scheduler", PNDMScheduler)
     pipeline = StableDiffusionPipeline(
         text_encoder=text_encoder,
         vae=vae,
         unet=unet,
         tokenizer=tokenizer,
-        scheduler=PNDMScheduler.from_config(
-            "CompVis/stable-diffusion-v1-4", subfolder="scheduler"
-        ),
+        scheduler=scheduler,
         safety_checker=StableDiffusionSafetyChecker.from_pretrained(
             "CompVis/stable-diffusion-safety-checker"
         ),

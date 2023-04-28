@@ -7,7 +7,6 @@ import importlib
 
 def maybe_load_model(config, subtype, default_model_factory=None):
     model_factory = load_target(config.model.get(f"{subtype}.target"), default=default_model_factory)
-
     if model_id := config.model.get("pretrained"):
         model = model_factory.from_pretrained(model_id, subfolder=subtype)
 
