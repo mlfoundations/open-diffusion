@@ -398,6 +398,13 @@ class TorchCSVDataset(Dataset):
 def metadata_filters(filter_dict):
     def filter_fn(sample):
         select = True
+        if "json" not in sample:
+            # No 'json' in sample to use for filtering
+            # - if `filter_dict`` is not empty, then we should not select this sample
+            # - if `filter_dict`` is empty, it means there is no filter and thus
+            # we select the sample
+            return False if filter_dict else True
+    
         db = json.loads(sample["json"])
 
         for param, expr in filter_dict.items():
