@@ -32,6 +32,7 @@ from torch.utils.data import default_collate
 
 import utils.distributed as dist_utils
 import pandas as pd
+import random as r
 
 from utils.logging import Path
 
@@ -109,6 +110,7 @@ class WebDataset(object):
         train=True,
         resolution=512,
         filters=None,
+        text_dropout=0.0,
         **kwargs,
     ):
         self.filters = filters or {}
@@ -122,6 +124,7 @@ class WebDataset(object):
             train=train,
             num_examples_to_see=num_examples_to_see,
             filters=self.filters,
+            text_dropout=text_dropout
         )
 
         self.loader = wds.WebLoader(
@@ -134,7 +137,7 @@ class WebDataset(object):
 
         logging.info(f"Unused dataset parameters for WebDataset: {kwargs}")
 
-    def get_dataset(self, url, tokenizer, train, num_examples_to_see, filters):
+    def get_dataset(self, url, tokenizer, train, num_examples_to_see, filters, text_dropout=0.0):
         transform = CenterCropSDTransform(center_crop=True, size=self.resolution)
 
         pipeline = [wds.ResampledShards(url)]
@@ -162,6 +165,7 @@ class WebDataset(object):
                     pixel_values="jpg;png;jpeg;webp", input_ids="txt", text_raw="txt"
                 ),
                 wds.map(filter_keys(set(["pixel_values", "input_ids", "text_raw"]))),
+                wds.map_dict(input_ids=lambda text: "" if r.random() < text_dropout else text),
                 wds.map_dict(
                     pixel_values=transform,
                     input_ids=lambda text: tokenizer(
