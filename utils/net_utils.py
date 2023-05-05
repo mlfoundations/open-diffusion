@@ -5,15 +5,17 @@ import json
 import importlib
 
 
-def maybe_load_model(config, subtype, default_model_factory=None):
+def maybe_load_model(config, subtype, subfolder=None, default_model_factory=None):
+    if subfolder is None:
+        subfolder = subtype
     model_factory = load_target(config.model.get(f"{subtype}.target"), default=default_model_factory)
     if model_id := config.model.get("pretrained"):
-        model = model_factory.from_pretrained(model_id, subfolder=subtype)
+        model = model_factory.from_pretrained(model_id, subfolder=subfolder)
 
     elif config.model.get(subtype, False) and (
         model_id := config.model.get(subtype).get("pretrained")
     ):
-        model = model_factory.from_pretrained(model_id, subfolder=subtype)
+        model = model_factory.from_pretrained(model_id, subfolder=subfolder)
 
     elif model_params := config.model.get(subtype).get("params"):
         model = model_factory(**OmegaConf.to_container(model_params))

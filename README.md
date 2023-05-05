@@ -95,9 +95,12 @@ model:
     tokenizer:
         pretrained: ???
     
-    scheduler:
+    noise_scheduler_training:
         pretrained: ???
-    
+
+    noise_scheduler_inference:
+        pretrained: ???
+
     unet:
         target: UNet2DConditionModel
         params:
@@ -170,13 +173,12 @@ Arguments with `???` are required.
     1. VAE
     2. UNet 
     3. Tokenizer
-    4. Scheduler 
+    4. Noise scheduler for training/inference
 
     You can declare each of these with the `pretrained` argument, which should go to the root of a pretrained diffusers pipeline, or with the `params` argument, which corresponds to arguments passed directly to the target constructor. The pattern above is the intended one, where only the UNet is fine-tuned. This repo currently supports from-scratch UNet training, so we declare all other parts pretrained (although only the VAE can really be considered pretrained). You can get the other pretrained components from `github.com/huggingface/diffusers`. If you would like to fine-tune, you don't have to declare any subcomponents and instead just declare `model.pretrained` directly.
   - `xformers` -> Whether or not to use `xformers` memory efficient attention. To use this you need to install `xformers` (see `github.com/facebookresearch/xformers`). It's very recommended, usually cuts GPU memory consumption in half. 
   - `use_ema` -> Whether or not to use Exponential Moving Average training. This requires more VRAM but improves training stability, and is useful for very long training runs on large datasets. 
   - `ema.path` -> Path to a pretrained EMA model. Usually only relevant for multi-stage training or fine-tuning on a large dataset.
-
 
 ### Running a large-scale experiment
 

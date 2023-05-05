@@ -116,7 +116,9 @@ def main():
         logging.info(f"Using run_id {run_id}")
 
         # todo remove api key, add argument
-        wandb.login(key=config.wandb.api_key)
+        wandb_mode = config.wandb.get("mode", "online")
+        if wandb_mode == "online":
+            wandb.login(key=config.wandb.api_key)
 
         wandb.init(
             project=config.experiment.project,
@@ -126,7 +128,7 @@ def main():
             dir=config.experiment.log_dir,
             id=run_id,
             entity=config.wandb.get("entity", None),
-            mode=config.wandb.get("mode", "online"),
+            mode=wandb_mode,
         )
 
         wandb.run.log_code(".")
@@ -235,7 +237,8 @@ def main():
 
     # GETTING NOISE SCHEDULER
     # TODO does it make sense to use ddpm scheduler for training?
-    noise_scheduler = maybe_load_model(config, "scheduler", DDPMScheduler)
+    noise_scheduler = maybe_load_model(
+        config, subtype="noise_scheduler_training", subfolder="scheduler", default_model_factory=DDPMScheduler)
     # GETTING TRAIN DATASET
     train_dataset = getattr(data, config.dataset.type)(
         rank=config.system.global_rank,
@@ -586,7 +589,8 @@ def save_model(
     if ema_unet is not None:
         ema_unet.store(unet.parameters())
         ema_unet.copy_to(unet.parameters())
-    scheduler = maybe_load_model(config, "scheduler", PNDMScheduler)
+
+    scheduler = maybe_load_model(config, "noise_scheduler_inference", subfolder="scheduler", default_model_factory=PNDMScheduler)
     pipeline = StableDiffusionPipeline(
         text_encoder=text_encoder,
         vae=vae,
