@@ -49,8 +49,13 @@ model:
   tokenizer:
       pretrained: ${model.pt_path}
   
-  scheduler:
+  noise_scheduler_training:
       pretrained: ${model.pt_path}
+      target: DDPMNoiseScheduler
+  
+  noise_scheduler_inference:
+      pretrained: "CompVis/stable-diffusion-v1-4"
+      target: PNDMScheduler
   
   unet:
       target: UNet2DConditionModel

@@ -116,7 +116,9 @@ def main():
         logging.info(f"Using run_id {run_id}")
 
         # todo remove api key, add argument
-        wandb.login(key=config.wandb.api_key)
+        wandb_mode = config.wandb.get("mode", "online")
+        if wandb_mode == "online":
+            wandb.login(key=config.wandb.api_key)
 
         wandb.init(
             project=config.experiment.project,
@@ -126,6 +128,7 @@ def main():
             dir=config.experiment.log_dir,
             id=run_id,
             entity=config.wandb.get("entity", None),
+            mode=wandb_mode,
         )
 
         wandb.run.log_code(".")
@@ -234,8 +237,8 @@ def main():
 
     # GETTING NOISE SCHEDULER
     # TODO does it make sense to use ddpm scheduler for training?
-    noise_scheduler = maybe_load_model(config, "scheduler", DDPMScheduler)
-
+    noise_scheduler = maybe_load_model(
+        config, subtype="noise_scheduler_training", subfolder="scheduler", default_model_factory=DDPMScheduler)
     # GETTING TRAIN DATASET
     train_dataset = getattr(data, config.dataset.type)(
         rank=config.system.global_rank,
@@ -295,6 +298,7 @@ def main():
 
         # Save model in the diffusers format
         save_model(
+            config=config,
             unet=unet.module,
             text_encoder=text_encoder,
             vae=vae,
@@ -425,6 +429,7 @@ def main():
 
         save_path = Path(config.experiment.folder) / "final"
         save_model(
+            config=config,
             unet=unet.module,
             text_encoder=text_encoder,
             vae=vae,
@@ -494,6 +499,7 @@ def validate_and_save_model(
 
         # Save model
         save_model(
+            config=config,
             unet=unet.module,
             text_encoder=text_encoder,
             vae=vae,
@@ -570,6 +576,7 @@ def revert_model(config, current_pipeline_path, unet, ema_unet, optimizer):
 
 
 def save_model(
+    config,
     unet,
     vae,
     tokenizer,
@@ -583,14 +590,13 @@ def save_model(
         ema_unet.store(unet.parameters())
         ema_unet.copy_to(unet.parameters())
 
+    scheduler = maybe_load_model(config, "noise_scheduler_inference", subfolder="scheduler", default_model_factory=PNDMScheduler)
     pipeline = StableDiffusionPipeline(
         text_encoder=text_encoder,
         vae=vae,
         unet=unet,
         tokenizer=tokenizer,
-        scheduler=PNDMScheduler.from_config(
-            "CompVis/stable-diffusion-v1-4", subfolder="scheduler"
-        ),
+        scheduler=scheduler,
         safety_checker=StableDiffusionSafetyChecker.from_pretrained(
             "CompVis/stable-diffusion-safety-checker"
         ),
