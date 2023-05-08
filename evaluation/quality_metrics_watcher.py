@@ -1,4 +1,5 @@
 from utils.logging import Path
+from torch.utils.data import DataLoader
 
 import argparse
 import clip
@@ -6,10 +7,11 @@ import wandb
 
 from evaluation.quality_metrics import get_step_file_index
 from evaluation.quality_metrics import extract_files_from_tarpath
-from evaluation.quality_metrics import image_from_file, compute_clip_score
+from evaluation.quality_metrics import image_from_file, compute_clip_score, TarImageDataset
 
 import pandas as pd
 import tqdm
+import torch
 
 
 def main():
@@ -51,7 +53,7 @@ def main():
             for f in filenames
         ]
 
-        clip_score = compute_clip_score(model, torch.stack(images), prompts)
+        clip_score = compute_clip_score(model, DataLoader(torch.stack(images), batch_size=256), prompts)
 
         wandb.log({"clip_score_": clip_score.item(), "epoch": step})
 

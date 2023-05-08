@@ -28,6 +28,7 @@ import tarfile
 import io
 import pandas as pd
 import scipy.linalg as linalg
+import json
 
 
 def main():
@@ -294,6 +295,51 @@ def image_from_file(f):
     img = Image.open(f)
     return img.convert("RGB")
 
+
+class TarImageDataset(Dataset):
+    def __init__(self, tar_paths, transform=None, ext="jpg") -> None:
+        super().__init__()
+
+        self.ext = ext
+        self.tar_paths = tar_paths
+        self.transform = transform
+
+        self._process_tarfile()
+
+    def _process_tarfile(self):
+        self.metadata_list = []
+        self.image_list = []
+        self.tars = []
+        self.tar_indices = []
+
+        for i, tar_path in enumerate(self.tar_paths):
+            tar = tarfile.open(tar_path)
+
+            self.tars.append(tar)
+
+            self.members = tar.getmembers()
+            self.image_list.extend([m for m in self.members if m.name.endswith(self.ext)])
+            json_list = [m for m in self.members if m.name.endswith("json")]
+
+            for member_json in json_list:
+                jsonfile = tar.extractfile(member_json)
+                metadata = json.load(jsonfile)
+
+                self.metadata_list.append(metadata)
+                self.tar_indices.append(i)
+
+    def __getitem__(self, index):
+        member = self.image_list[index]
+        tar = self.tars[self.tar_indices[index]]
+
+        imagefile = tar.extractfile(member)
+        image = image_from_file(imagefile)
+
+        metadata = self.metadata_list[index]
+        if self.transform:
+            image = self.transform(image)
+
+        return image, metadata
 
 
 if __name__ == "__main__":
